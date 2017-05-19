@@ -20,6 +20,8 @@ extern "C" {
 
     void initHX711 (int dtPin, int sckPin, int offset, double div);
     double getReading ();
+    int getRawReading ();
+    long getAverageReadingTime ();
 
 #ifdef __cplusplus
 }

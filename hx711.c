@@ -31,6 +31,8 @@ static double _div = 0;
 
 static volatile int reading = 0;
 
+static long int readAverage = 70;
+
 unsigned long int t1,t2;
 const int SOUND_CONST = 171.50;
 
@@ -70,6 +72,16 @@ double getReading ()
     return (val + _offset)/_div;
 }
 
+int getRawReading ()
+{
+    return extendSign(readValue);
+}
+
+long getAverageReadingTime ()
+{
+    return readAverage;
+}
+
 static void delayFor ()
 {
     int j = 0;
@@ -77,7 +89,7 @@ static void delayFor ()
     
 }
 
-static long int readAverage = 70;
+
 
 //Funzione callback richiamata al rilevamento di un fronte sul piedino ECHO_PIN
 static void edge ()
@@ -171,7 +183,7 @@ static void edge ()
 
         for (i = 0; i < 3000; i++)
         {
-            printf ("%5.2f Avg: %3ld\n", getReading(), readAverage);
+            printf ("%5.2f %d Avg: %3ld\n", getReading(), getRawReading(), readAverage);
             delay(100);
         }
     }

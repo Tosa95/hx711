@@ -1,27 +1,29 @@
 /*
-*   Autori: Tosatto Davide, Grespan Riccardo
+*   Author: Davide Tosatto
 *
-*   Wrapper del modulo di controllo del sensore di prossimita attraverso le
-*   primitive di interoperabilità Python-C
-*
+*   Python wrapper module for hx711.c
 */
 
 #include <Python.h>
 #include <wiringPi.h>
 #include "hx711.h"
 
-static PyObject * proxsensor_getReading (PyObject *self, PyObject *args);
-static PyObject * proxsensor_initialize (PyObject *self, PyObject *args);
+static PyObject * hx711_getReading (PyObject *self, PyObject *args);
+static PyObject * hx711_getRawReading (PyObject *self, PyObject *args);
+static PyObject * hx711_getAverageReadingTime (PyObject *self, PyObject *args);
+static PyObject * hx711_initialize (PyObject *self, PyObject *args);
 
-// Tabella delle funzioni esportate
+// Exported functions table
 static PyMethodDef module_methods[] = {
-    {"getReading", proxsensor_getReading, METH_VARARGS, "Ritorna il peso letto"},
-    {"initialize", proxsensor_initialize, METH_VARARGS, "Inizializza il modulo"},
-    // Terminatore
+    {"getReading", hx711_getReading, METH_VARARGS,  "Returns read wheight"},
+    {"getRawReading", hx711_getRawReading, METH_VARARGS, "Returns read wheight, raw mode"},
+    {"getAverageReadingTime", hx711_getAverageReadingTime, METH_VARARGS, "Returns average reading time"},
+    {"initialize", hx711_initialize, METH_VARARGS, "Initializes the module"},
+    // Terminator
     {NULL, NULL, 0, NULL}
 };
 
-//Funzione che inizializza il modulo. Obbligatoria per permettere il funzionamento dello stesso
+//Mandatory function that initializes the module
 PyMODINIT_FUNC
 inithx711(void)
 {
@@ -31,15 +33,25 @@ inithx711(void)
 }
 
 
-//----------FUNZIONI ESPORTATE-------------------
+//----------EXPORTED_FUNCTIONS-------------------
 
-static PyObject * proxsensor_getReading (PyObject *self, PyObject *args)
+static PyObject * hx711_getReading (PyObject *self, PyObject *args)
 {
     return PyFloat_FromDouble(getReading());
 }
 
+static PyObject * hx711_getRawReading (PyObject *self, PyObject *args)
+{
+    return PyInt_FromLong((long)getRawReading());
+}
+
+static PyObject * hx711_getAverageReadingTime (PyObject *self, PyObject *args)
+{
+    return PyInt_FromLong((long)getAverageReadingTime());
+}
+
 // Funzione che inizializza il sensore. Se ritorna 0: ok. Se ritorna 1: errore
-static PyObject * proxsensor_initialize (PyObject *self, PyObject *args)
+static PyObject * hx711_initialize (PyObject *self, PyObject *args)
 {
     int dtPin, sckPin, offset;
     double div;

@@ -1,18 +1,12 @@
 /*
-*   Autori: Tosatto Davide, Grespan Riccardo
+*   Author: Tosatto Davide
 *
-*   Modulo di controllo del sensore ad ultrasuoni per la rilevazione della distanza.
+*   Module that controls sample reading from the HX711 sensor.
 *
-*   Si è deciso di scrivere questo modulo in C perche, per leggere la distanza
-*   e necessario misurare la durata di un'impulso, cosa che, fatta attraverso polling,
-*   va ad utilizzare troppe risorse di calcolo, in quanto non si possono inserire
-*   sleep nel ciclo per mantenere una precisione accettabile.
+*   Due to process switches, it can happen that a reading fails sometimes (on average one over 70).
 *
-*   Abbiamo pertanto utilizzato wiringPi, che, nella sua versione C, permette di
-*   mettersi in ascolto di variazioni sui pin di I/O attraverso il meccanismo degli
-*   interrupt e quindi senza spreco di risorse di calcolo
-*
-*   In questo file abbiamo il modulo in C puro. Nel file pythonizedProxSensor.c
+*   Since to avoid this kernel mode operation is needed but I have no time to write down a device driver,
+*   I simply throw away bad readings, identified by a reading time higher than average. Algorithm below.
 */
 
 #include "hx711.h"
@@ -20,7 +14,7 @@
 #include <wiringPi.h>
 #include <stdio.h>
 
-#define DEBUG
+//#define DEBUG //Uncomment to activate debug printfs
 
 static int DT_PIN = 0;
 static int SCK_PIN = 0;
@@ -29,12 +23,9 @@ static int readValue = 0;
 static int _offset = 0;
 static double _div = 0;
 
-static volatile int reading = 0;
+static volatile int reading = 0; //Keeps the read data
 
-static long int readAverage = 70;
-
-unsigned long int t1,t2;
-const int SOUND_CONST = 171.50;
+static long int readAverage = 70; //Keeps the average reading time of a single sample
 
 static float getMillisDiff (clock_t t1, clock_t t2);
 static float getDistFromTime (float timeDiff);
@@ -50,8 +41,7 @@ void initHX711 (int dtPin, int sckPin, int offset, double div)
     pinMode(SCK_PIN, OUTPUT);
     wiringPiISR (DT_PIN, INT_EDGE_FALLING,  edge);
 
-    _offset = offset;
-    _div = div;
+    setupHX711(offset, div);
 }
 
 
@@ -91,7 +81,7 @@ static void delayFor ()
 
 
 
-//Funzione callback richiamata al rilevamento di un fronte sul piedino ECHO_PIN
+//Callback function called at falling edge on DT_PIN
 static void edge ()
 {
     if (!reading && !digitalRead(DT_PIN))
@@ -119,10 +109,11 @@ static void edge ()
             delayMicroseconds (1);
 
             digitalWrite(SCK_PIN,LOW);
-            //delayMicroseconds (10);
 
             if (digitalRead(DT_PIN)){
-                //printf ("%d ", i);
+                #ifdef DEBUG
+                    printf ("%d ", i);
+                #endif
                 read++;}
         }
 
@@ -133,30 +124,16 @@ static void edge ()
         digitalWrite(SCK_PIN,LOW);
 
 
-        // long int readTimeDiff = 0;
-
-        // if (prevReadUS > 0)
-        // {
-        //     readTimeDiff = micros() - prevReadUS;
-        // }
-
-        // prevReadUS = micros();
-
+        //Calculates the reading time for this sample
         long int readTime = micros()-microS;
 
+        //Calculates a weighted average through shifts to waste less time
+        //It's like doing (readAverage*7 + readTime)/8
+        //Probably the copiler would do this as well, but for being sure I used shifts
         readAverage = ((readAverage << 2)  + (readAverage << 1) + readAverage + readTime)>>3;
 
-        int valid = !(readTime > (readAverage + ((readAverage<<2)>>4)));
-
-
-        // printf ("Read: %ld  Time: %ld  Avg: %ld", read, readTime, readAverage);
-
-        // if (!valid)
-        // {
-        //     printf (" INVALID!\n");
-        // } else {
-        //     printf ("\n");
-        // }
+        //This sample is valid if its reading time is less than average + 25% of the average
+        int valid = !(readTime > (readAverage + (readAverage>>2)));
 
 
         if (valid)
@@ -167,6 +144,12 @@ static void edge ()
     }
 
     
+}
+
+void setupHX711 (int offset, double div)
+{
+    _offset = offset;
+    _div = div;
 }
 
 #ifdef DEBUG

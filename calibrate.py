@@ -4,40 +4,74 @@ import Queue
 import threading
 import hx711
 
-DT = 40
-SCK = 38
+SAMPLES = 300
 
-def getReadAvg (samples):
+def getData (samples):
     
-    acc = 0
+    print "Now reading %d samples \n" % samples
 
-    print "Now reading %d samples for taking the average\n" % samples
+    res = []
 
     for i in range(samples):
         val = hx711.getRawReading()
-        print "%d, %d" % (val, hx711.getAverageReadingTime())
-        acc = acc + val
-
+        res.append(val)
+        print "%4d: %d, %d" % (i+1, val, hx711.getAverageReadingTime())
         time.sleep(0.1)
+
+    return res
+
+
+def getReadAvg (data):
     
-    return acc/samples;
+    acc = 0
+
+    
+
+    for d in data:
+        val = hx711.getRawReading()
+        acc = acc + d
+       
+    
+    return acc/len(data);
+
+def getMaxDistance (data, div):
+    
+    max = 0.0
+
+    for i in range(len(data)):
+        for j in range(len(data)):
+            
+            #print "%d - %d = %d \n" % (data[i], data[j], data[i]-data[j]) 
+
+            dist = abs(data[i]-data[j])
+
+            if (dist > max):
+                max = dist
+    
+    print "MAX DIFFERENCE: %d \n" % max
+
+    return max/div
 
 def main():
     hx711.initialize(21, 20, -43000, 200000.0)
 
-    raw_input("Put nothing on sensor and press enter to start calibrating: ")
-    
-    offset = -getReadAvg(100)
+    print "Sensor calibration script.\n\nIt's important not to move or touch nor the sensor nor the surface on which it lies while calibrating.\n\n\n"
 
-    raw_input("Now put something of which you kow the weight and press enter: ")
+    raw_input("Put nothing on the sensor and press enter to start calibrating: ")
     
-    wAvg = getReadAvg(100)
+    offset = -getReadAvg(getData(SAMPLES))
+
+    raw_input("Now put something of which you know the weight on the sensor and press enter: ")
+    
+    data = getData(SAMPLES)
+
+    wAvg = getReadAvg(data)
 
     fixedWeight = float(raw_input("Insert now the weight of the object in Kg: "))
 
     div = (wAvg+offset)/fixedWeight
 
-    print "Offset: %d,  div: %f\n" % (offset, div)
+    print "Offset: %d,  div: %f, precision: %f Kg \n" % (offset, div, getMaxDistance(data, div))
 
 if __name__ == '__main__':
     main()

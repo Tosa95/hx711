@@ -12,6 +12,7 @@ static PyObject * hx711_getReading (PyObject *self, PyObject *args);
 static PyObject * hx711_getRawReading (PyObject *self, PyObject *args);
 static PyObject * hx711_getAverageReadingTime (PyObject *self, PyObject *args);
 static PyObject * hx711_initialize (PyObject *self, PyObject *args);
+static PyObject * hx711_setup (PyObject *self, PyObject *args);
 
 // Exported functions table
 static PyMethodDef module_methods[] = {
@@ -19,6 +20,7 @@ static PyMethodDef module_methods[] = {
     {"getRawReading", hx711_getRawReading, METH_VARARGS, "Returns read wheight, raw mode"},
     {"getAverageReadingTime", hx711_getAverageReadingTime, METH_VARARGS, "Returns average reading time"},
     {"initialize", hx711_initialize, METH_VARARGS, "Initializes the module"},
+    {"setup", hx711_setup, METH_VARARGS, "Sets the sensor calibration"},
     // Terminator
     {NULL, NULL, 0, NULL}
 };
@@ -50,19 +52,31 @@ static PyObject * hx711_getAverageReadingTime (PyObject *self, PyObject *args)
     return PyInt_FromLong((long)getAverageReadingTime());
 }
 
-// Funzione che inizializza il sensore. Se ritorna 0: ok. Se ritorna 1: errore
+// Initializes the sensor
 static PyObject * hx711_initialize (PyObject *self, PyObject *args)
 {
     int dtPin, sckPin, offset;
     double div;
 
-    //Serve per leggere due inter (ii) dagli argomenti passati
     if (!PyArg_ParseTuple(args, "iiid", &dtPin, &sckPin, &offset, &div))
         return PyInt_FromLong(1);
 
     wiringPiSetupGpio();
 
     initHX711(dtPin, sckPin, offset, div);
+
+    return PyInt_FromLong(0);
+}
+
+static PyObject * hx711_setup (PyObject *self, PyObject *args)
+{
+    int offset;
+    double div;
+
+    if (!PyArg_ParseTuple(args, "id", &offset, &div))
+        return PyInt_FromLong(1);
+
+    setupHX711(offset, div);
 
     return PyInt_FromLong(0);
 }

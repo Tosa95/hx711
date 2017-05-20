@@ -22,6 +22,7 @@ extern "C" {
     double getReading ();
     int getRawReading ();
     long getAverageReadingTime ();
+    void setupHX711 (int offset, double div);
 
 #ifdef __cplusplus
 }

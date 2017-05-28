@@ -21,8 +21,9 @@ extern "C" {
     void initHX711 (int dtPin, int sckPin, int offset, double div);
     double getReading ();
     int getRawReading ();
+    double getFilteredData (int length);
     long getAverageReadingTime ();
-    void setupHX711 (int offset, double div);
+    void removeMinMax(int orig[], int size);
 
 #ifdef __cplusplus
 }

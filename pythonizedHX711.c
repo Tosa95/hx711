@@ -13,11 +13,13 @@ static PyObject * hx711_getRawReading (PyObject *self, PyObject *args);
 static PyObject * hx711_getAverageReadingTime (PyObject *self, PyObject *args);
 static PyObject * hx711_initialize (PyObject *self, PyObject *args);
 static PyObject * hx711_setup (PyObject *self, PyObject *args);
+static PyObject * hx711_getDropCount (PyObject *self, PyObject *args);
 
 // Exported functions table
 static PyMethodDef module_methods[] = {
     {"getReading", hx711_getReading, METH_VARARGS,  "Returns read wheight"},
     {"getRawReading", hx711_getRawReading, METH_VARARGS, "Returns read wheight, raw mode"},
+    {"getDropCount", hx711_getDropCount, METH_VARARGS,  "Returns the number of samples dropped from the beginning"},
     {"getAverageReadingTime", hx711_getAverageReadingTime, METH_VARARGS, "Returns average reading time"},
     {"initialize", hx711_initialize, METH_VARARGS, "Initializes the module"},
     {"setup", hx711_setup, METH_VARARGS, "Sets the sensor calibration"},
@@ -45,6 +47,11 @@ static PyObject * hx711_getReading (PyObject *self, PyObject *args)
 static PyObject * hx711_getRawReading (PyObject *self, PyObject *args)
 {
     return PyInt_FromLong((long)getRawReading());
+}
+
+static PyObject * hx711_getDropCount (PyObject *self, PyObject *args)
+{
+    return PyInt_FromLong((long)getDropCount());
 }
 
 static PyObject * hx711_getAverageReadingTime (PyObject *self, PyObject *args)

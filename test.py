@@ -8,10 +8,10 @@ DT = 40
 SCK = 38
 
 def main():
-    hx711.initialize(21, 20, -42905, 1987766.355140)
+    hx711.initialize(21, 20, -40337, 2010924.528302)
 
-    for i in range(2000):
-        print "%.5f Kg, read time: %d" % (hx711.getReading(), hx711.getAverageReadingTime())
+    while True:
+        print "%.5f Kg, read time: %d, drops: %d" % (hx711.getReading(), hx711.getAverageReadingTime(), hx711.getDropCount())
         time.sleep(0.1)
 
 def data_ready (pin):

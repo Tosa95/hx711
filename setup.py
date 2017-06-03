@@ -12,7 +12,7 @@ module1 = Extension('hx711',
                     include_dirs = ['/usr/local/include' ,'/usr/local/lib'],
                     libraries = ['wiringPi'],
                     library_dirs = ['/usr/local/lib'],
-                    sources = ['hx711.c', 'pythonizedHX711.c'])
+                    sources = ['hx711.c', 'pythonizedHX711.c', 'precisionTiming.c'])
 
 setup (name = 'hx711',
        version = '0.1',

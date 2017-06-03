@@ -10,6 +10,7 @@
 */
 
 #include "hx711.h"
+#include "precisionTiming.h"
 #include <time.h>
 #include <wiringPi.h>
 #include <stdio.h>
@@ -22,10 +23,11 @@ static int SCK_PIN = 0;
 static int readValue = 0;
 static int _offset = 0;
 static double _div = 0;
+static long int dropCount = 0;
 
 static volatile int reading = 0; //Keeps the read data
 
-static long int readAverage = 70; //Keeps the average reading time of a single sample
+static precisionTime_t readAverage = 70; //Keeps the average reading time of a single sample
 
 static float getMillisDiff (clock_t t1, clock_t t2);
 static float getDistFromTime (float timeDiff);
@@ -72,6 +74,11 @@ long getAverageReadingTime ()
     return readAverage;
 }
 
+long int getDropCount ()
+{
+    return dropCount;
+}
+
 static void delayFor ()
 {
     int j = 0;
@@ -88,7 +95,7 @@ static void edge ()
     {
         //printf("Reading \n");
 
-        long int microS = micros();
+        precisionTime_t microS = getTimeMicro();
 
         reading = 1;
 
@@ -98,7 +105,7 @@ static void edge ()
 
         int j = 0;
 
-        delayMicroseconds (1);
+        precisionDelayMicro (1);
 
         for (i = 0; i < 24; i++)
         {
@@ -106,13 +113,13 @@ static void edge ()
             read <<= 1;
 
             
-            delayMicroseconds (1);
+            precisionDelayMicro (1);
 
             digitalWrite(SCK_PIN,LOW);
 
             if (digitalRead(DT_PIN)){
                 #ifdef DEBUG
-                    printf ("%d ", i);
+                    //printf ("%d ", i);
                 #endif
                 read++;}
         }
@@ -120,12 +127,12 @@ static void edge ()
         
 
         digitalWrite(SCK_PIN,HIGH);
-        delayMicroseconds (1);
+        precisionDelayMicro (1);
         digitalWrite(SCK_PIN,LOW);
 
 
         //Calculates the reading time for this sample
-        long int readTime = micros()-microS;
+        precisionTime_t readTime = getTimeMicro() - microS;
 
         //Calculates a weighted average through shifts to waste less time
         //It's like doing (readAverage*7 + readTime)/8
@@ -135,9 +142,22 @@ static void edge ()
         //This sample is valid if its reading time is less than average + 25% of the average
         int valid = !(readTime > (readAverage + (readAverage>>2)));
 
+        #ifdef DEBUG
+            printf("Average: %lld, Read Time: %lld, valid: %d\n", readAverage, readTime, valid);
+        #endif
+
 
         if (valid)
+        {
             readValue = read;
+        }
+        else
+        {
+            dropCount++;
+            #ifdef DEBUG
+                printf("DROP: %d\n", read);
+            #endif
+        }
 
 
         reading = 0;
@@ -166,7 +186,7 @@ void setupHX711 (int offset, double div)
 
         for (i = 0; i < 3000; i++)
         {
-            printf ("%5.2f %d Avg: %3ld\n", getReading(), getRawReading(), readAverage);
+            printf ("%5.2f %d Avg: %3ld Drop: %ld\n", getReading(), getRawReading(), readAverage, getDropCount);
             delay(100);
         }
     }
